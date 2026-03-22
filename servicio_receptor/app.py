@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 import requests
 import os
 from flasgger import Swagger
@@ -14,54 +14,42 @@ app.config['JSON_SORT_KEYS'] = False
 
 swagger = Swagger(app)
 
+# 🔗 URL del microservicio BD
 URL_BD = os.environ.get("URL_BD")
 
 # =========================
-# RECIBIR Y ENVIAR
+# RECIBIR Y ENVIAR (PATH PARAMS)
 # =========================
-@app.route("/usuarios", methods=["POST"])
-def recibir_usuario():
+@app.route("/usuarios/<nombre>/<correo>/<int:edad>/<interes>", methods=["GET"])
+def recibir_usuario(nombre, correo, edad, interes):
     """
-    Recibir usuario y enviarlo al microservicio BD
+    Enviar usuario al microservicio BD
     ---
     parameters:
       - name: nombre
-        in: query
+        in: path
         type: string
         required: true
       - name: correo
-        in: query
+        in: path
         type: string
         required: true
       - name: edad
-        in: query
+        in: path
         type: integer
         required: true
       - name: interes
-        in: query
+        in: path
         type: string
         required: true
     responses:
       200:
-        description: Usuario enviado
+        description: Usuario enviado correctamente
     """
     try:
-        nombre = request.args.get("nombre")
-        correo = request.args.get("correo")
-        edad = request.args.get("edad")
-        interes = request.args.get("interes")
+        url = f"{URL_BD}/usuarios/{nombre}/{correo}/{edad}/{interes}"
 
-        if not all([nombre, correo, edad, interes]):
-            return jsonify({"error": "Faltan parámetros"}), 400
-
-        params = {
-            "nombre": nombre,
-            "correo": correo,
-            "edad": edad,
-            "interes": interes
-        }
-
-        respuesta = requests.post(f"{URL_BD}/usuarios", params=params)
+        respuesta = requests.get(url)
 
         return jsonify({
             "mensaje": "Enviado correctamente",
