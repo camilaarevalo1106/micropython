@@ -16,7 +16,7 @@ app.config['JSON_SORT_KEYS'] = False
 swagger = Swagger(app)
 
 # 🔥 MONGODB
-client = MongoClient(os.environ.get("mongodb+srv://admin:ca950624@cluster0.be2vy2z.mongodb.net/?mi_base_datos=Cluster0"))
+client = MongoClient(os.environ.get("MONGO_URI"))
 db = client["mi_base_datos"]
 coleccion = db["usuarios"]
 
