@@ -5,28 +5,23 @@ from flasgger import Swagger
 import os
 
 app = Flask(__name__)
-swagger = Swagger(app, config={
-    "headers": [],
-    "specs": [
-        {
-            "endpoint": 'apispec',
-            "route": '/apispec.json',
-            "rule_filter": lambda rule: True,
-            "model_filter": lambda tag: True,
-        }
-    ],
-    "static_url_path": "/flasgger_static",
-    "swagger_ui": True,
-    "specs_route": "/apidocs/"
-})
 
-# 🔥 CONEXIÓN A MONGODB
-client = MongoClient(os.environ.get("mongodb+srv://admin:ca950624@cluster0.be2vy2z.mongodb.net/?mi_base_datos=Cluster0"))
+# ✅ SWAGGER
+app.config['SWAGGER'] = {
+    'title': 'Microservicio BD',
+    'uiversion': 3
+}
+app.config['JSON_SORT_KEYS'] = False
+
+swagger = Swagger(app)
+
+# 🔥 MONGODB
+client = MongoClient(os.environ.get("MONGO_URI"))
 db = client["mi_base_datos"]
 coleccion = db["usuarios"]
 
 # =========================
-# CREATE (QUERY PARAMS)
+# CREATE
 # =========================
 @app.route("/usuarios", methods=["POST"])
 def insertar_usuario():
@@ -38,24 +33,36 @@ def insertar_usuario():
         in: query
         type: string
         required: true
+      - name: correo
+        in: query
+        type: string
+        required: true
       - name: edad
         in: query
         type: integer
         required: true
+      - name: interes
+        in: query
+        type: string
+        required: true
     responses:
       200:
-        description: Usuario insertado correctamente
+        description: Usuario insertado
     """
     try:
         nombre = request.args.get("nombre")
+        correo = request.args.get("correo")
         edad = request.args.get("edad")
+        interes = request.args.get("interes")
 
-        if not nombre or not edad:
+        if not all([nombre, correo, edad, interes]):
             return jsonify({"error": "Faltan parámetros"}), 400
 
         data = {
             "nombre": nombre,
-            "edad": int(edad)
+            "correo": correo,
+            "edad": int(edad),
+            "interes": interes
         }
 
         resultado = coleccion.insert_one(data)
@@ -81,14 +88,11 @@ def obtener_usuarios():
       200:
         description: Lista de usuarios
     """
-    try:
-        usuarios = []
-        for u in coleccion.find():
-            u["_id"] = str(u["_id"])
-            usuarios.append(u)
-        return jsonify(usuarios)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    usuarios = []
+    for u in coleccion.find():
+        u["_id"] = str(u["_id"])
+        usuarios.append(u)
+    return jsonify(usuarios)
 
 
 # =========================
@@ -104,9 +108,6 @@ def obtener_usuario(id):
         in: path
         type: string
         required: true
-    responses:
-      200:
-        description: Usuario encontrado
     """
     try:
         usuario = coleccion.find_one({"_id": ObjectId(id)})

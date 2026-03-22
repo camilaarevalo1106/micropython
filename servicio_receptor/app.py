@@ -4,26 +4,20 @@ import os
 from flasgger import Swagger
 
 app = Flask(__name__)
-swagger = Swagger(app, config={
-    "headers": [],
-    "specs": [
-        {
-            "endpoint": 'apispec',
-            "route": '/apispec.json',
-            "rule_filter": lambda rule: True,
-            "model_filter": lambda tag: True,
-        }
-    ],
-    "static_url_path": "/flasgger_static",
-    "swagger_ui": True,
-    "specs_route": "/apidocs/"
-})
 
-# URL del microservicio BD
+# ✅ SWAGGER
+app.config['SWAGGER'] = {
+    'title': 'Microservicio Receptor',
+    'uiversion': 3
+}
+app.config['JSON_SORT_KEYS'] = False
+
+swagger = Swagger(app)
+
 URL_BD = os.environ.get("URL_BD")
 
 # =========================
-# RECIBE Y REENVÍA
+# RECIBIR Y ENVIAR
 # =========================
 @app.route("/usuarios", methods=["POST"])
 def recibir_usuario():
@@ -35,24 +29,36 @@ def recibir_usuario():
         in: query
         type: string
         required: true
+      - name: correo
+        in: query
+        type: string
+        required: true
       - name: edad
         in: query
         type: integer
         required: true
+      - name: interes
+        in: query
+        type: string
+        required: true
     responses:
       200:
-        description: Usuario enviado al microservicio BD
+        description: Usuario enviado
     """
     try:
         nombre = request.args.get("nombre")
+        correo = request.args.get("correo")
         edad = request.args.get("edad")
+        interes = request.args.get("interes")
 
-        if not nombre or not edad:
+        if not all([nombre, correo, edad, interes]):
             return jsonify({"error": "Faltan parámetros"}), 400
 
         params = {
             "nombre": nombre,
-            "edad": edad
+            "correo": correo,
+            "edad": edad,
+            "interes": interes
         }
 
         respuesta = requests.post(f"{URL_BD}/usuarios", params=params)
