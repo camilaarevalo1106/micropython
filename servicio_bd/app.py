@@ -5,7 +5,20 @@ from flasgger import Swagger
 import os
 
 app = Flask(__name__)
-swagger = Swagger(app)
+swagger = Swagger(app, config={
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": 'apispec',
+            "route": '/apispec.json',
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/apidocs/"
+})
 
 # 🔥 CONEXIÓN A MONGODB
 client = MongoClient(os.environ.get("mongodb+srv://admin:ca950624@cluster0.be2vy2z.mongodb.net/?mi_base_datos=Cluster0"))
